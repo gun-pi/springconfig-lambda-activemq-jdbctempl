@@ -7,11 +7,11 @@ import java.util.Random;
 
 public class DocumentDao {
 
+    private static final Random random = new Random();
+
+    private static final String QUERY = "INSERT INTO documents (content, published_on, id) VALUES (?, ?, ?)";
+
     private JdbcTemplate jdbcTemplate;
-
-    private final Random random = new Random();
-
-    private final String QUERY = "INSERT INTO documents (content, published_on, id) VALUES (?, ?, ?)";
 
     public DocumentDao(final JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;

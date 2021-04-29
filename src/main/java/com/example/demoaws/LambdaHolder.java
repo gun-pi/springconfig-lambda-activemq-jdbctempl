@@ -9,6 +9,7 @@ public class LambdaHolder {
 
     public static DocumentDao documentDao;
 
+
     public static JmsTemplate getJmsTemplate() {
         return jmsTemplate;
     }

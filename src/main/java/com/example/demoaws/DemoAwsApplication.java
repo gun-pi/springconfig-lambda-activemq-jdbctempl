@@ -3,6 +3,8 @@ package com.example.demoaws;
 import com.example.demoaws.db.DocumentDao;
 import com.example.demoaws.db.DocumentEntity;
 import org.apache.activemq.ActiveMQConnectionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.cloud.function.context.FunctionRegistration;
 import org.springframework.cloud.function.context.FunctionType;
@@ -21,11 +23,17 @@ import java.util.function.Function;
 @SpringBootConfiguration
 public class DemoAwsApplication implements ApplicationContextInitializer<GenericApplicationContext> {
 
-    private final String brokerUrl = "ssl://b-d304a064-c674-4e8f-86de-be9139fdc19e-1.mq.eu-central-1.amazonaws.com:61617";
+    private static final String BROKER_URL = "ssl://b-bf697da4-6770-4f18-b4be-f1d6d72be87f-1.mq.eu-central-1.amazonaws.com:61617";
+    private static final String BROKER_USER = "activemq";
+    private static final String BROKER_PASSWORD = "exampleexample";
+    private static final String BROKER_QUEUE = "queue";
 
-    private final String brokerUser = "activemq";
+    private static final String DATABASE_URL = "jdbc:postgresql://database-1.cx96u0a6s3vd.eu-central-1.rds.amazonaws.com:5432/postgres";
+    private static final String DATABASE_USER = "postgres";
+    private static final String DATABASE_PASSWORD = "exampleexample";
+    private static final String DATABASE_DRIVER = "org.postgresql.Driver";
 
-    private final String brokerPassword = "exampleexample";
+    private static final Logger LOG = LoggerFactory.getLogger(DemoAwsApplication.class);
 
     public static void main(String[] args) {
         FunctionalSpringApplication.run(DemoAwsApplication.class, args);
@@ -33,11 +41,28 @@ public class DemoAwsApplication implements ApplicationContextInitializer<Generic
 
     public Function<String, String> function() {
         return input -> {
-            JmsTemplate jmsTemplate = LambdaHolder.getJmsTemplate();
-            jmsTemplate.convertAndSend("queue", input);
-            String message = (String) jmsTemplate.receiveAndConvert("queue");
-            final DocumentEntity documentEntity = new DocumentEntity(message);
-            final Long id = LambdaHolder.getDocumentDao().save(documentEntity);
+            LOG.info("Function is starting with input: {}", input);
+
+            String message;
+            try {
+                JmsTemplate jmsTemplate = LambdaHolder.getJmsTemplate();
+                jmsTemplate.convertAndSend(BROKER_QUEUE, input);
+                message = (String) jmsTemplate.receiveAndConvert(BROKER_QUEUE);
+            } catch (Exception e) {
+                LOG.info("Exception occurred during JMS interaction ", e);
+                throw new RuntimeException(e);
+            }
+
+            Long id;
+            try {
+                final DocumentEntity documentEntity = new DocumentEntity(message);
+                id = LambdaHolder.getDocumentDao().save(documentEntity);
+            } catch (Exception e) {
+                LOG.info("Exception occurred during database interaction ", e);
+                throw new RuntimeException(e);
+            }
+
+            LOG.info("Function is finishing with message {} and id {}", input, id);
             return id.toString();
         };
     }
@@ -50,9 +75,9 @@ public class DemoAwsApplication implements ApplicationContextInitializer<Generic
 
         context.registerBean(ActiveMQConnectionFactory.class, () -> {
             final ActiveMQConnectionFactory activeMQConnectionFactory = new ActiveMQConnectionFactory(
-                    brokerUser,
-                    brokerPassword,
-                    brokerUrl);
+                    BROKER_USER,
+                    BROKER_PASSWORD,
+                    BROKER_URL);
             activeMQConnectionFactory.setTrustAllPackages(true);
             return activeMQConnectionFactory;
         });
@@ -70,10 +95,10 @@ public class DemoAwsApplication implements ApplicationContextInitializer<Generic
 
         context.registerBean(DataSource.class, () -> {
             DriverManagerDataSource dataSource = new DriverManagerDataSource();
-            dataSource.setDriverClassName("org.postgresql.Driver");
-            dataSource.setUrl("jdbc:postgresql://database-1.cx96u0a6s3vd.eu-central-1.rds.amazonaws.com:5432/postgres");
-            dataSource.setUsername("postgres");
-            dataSource.setPassword("exampleexample");
+            dataSource.setUrl(DATABASE_URL);
+            dataSource.setUsername(DATABASE_USER);
+            dataSource.setPassword(DATABASE_PASSWORD);
+            dataSource.setDriverClassName(DATABASE_DRIVER);
             return dataSource;
         });
 
@@ -87,6 +112,7 @@ public class DemoAwsApplication implements ApplicationContextInitializer<Generic
             lambdaHolder.setJmsTemplate(context.getBean(JmsTemplate.class));
             return lambdaHolder;
         });
+
 
     }
 }
