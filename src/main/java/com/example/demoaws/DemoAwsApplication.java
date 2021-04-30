@@ -23,7 +23,7 @@ import java.util.function.Function;
 @SpringBootConfiguration
 public class DemoAwsApplication implements ApplicationContextInitializer<GenericApplicationContext> {
 
-    private static final String BROKER_URL = "ssl://b-bf697da4-6770-4f18-b4be-f1d6d72be87f-1.mq.eu-central-1.amazonaws.com:61617";
+    private static final String BROKER_URL = "ssl://b-3eb87df2-ac2e-4db8-b0ba-6ce90f4f2a9e-1.mq.eu-central-1.amazonaws.com:61617";
     private static final String BROKER_USER = "activemq";
     private static final String BROKER_PASSWORD = "exampleexample";
     private static final String BROKER_QUEUE = "queue";
