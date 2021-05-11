@@ -1,0 +1,73 @@
+buildscript {
+    dependencies {
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.10.RELEASE"
+    }
+}
+
+plugins {
+    id 'org.springframework.boot' version '2.3.10.RELEASE'
+    id 'java'
+}
+
+ext {
+    set('springCloudVersion', "Hoxton.SR6")
+}
+
+apply plugin: "io.spring.dependency-management"
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '11'
+
+repositories {
+    mavenCentral()
+    maven { url "https://repo.spring.io/snapshot" }
+    maven { url "https://repo.spring.io/milestone" }
+}
+
+dependencies {
+    implementation ("org.springframework.cloud:spring-cloud-function-adapter-aws")
+    testImplementation("org.springframework.cloud:spring-cloud-starter-function-webflux")
+    implementation("org.springframework.cloud:spring-cloud-function-context")
+    implementation ("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation ("org.springframework.boot:spring-boot-starter")
+    runtimeOnly group: 'org.postgresql', name: 'postgresql', version: '42.2.19'
+    compileOnly("com.amazonaws:aws-lambda-java-core:1.2.1")
+    testImplementation('org.springframework.boot:spring-boot-starter-test') {
+        exclude group: 'org.junit.vintage', module: 'junit-vintage-engine'
+    }
+    implementation 'org.springframework.boot:spring-boot-starter-activemq'
+    runtimeOnly 'com.amazonaws:aws-lambda-java-log4j2:1.2.0'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+task packageFat(type: Zip) {
+    archiveFileName = "${project.name}-fat.zip"
+    from compileJava
+    from processResources
+    into('lib') {
+        from configurations.runtimeClasspath
+    }
+}
+
+task packageLibs(type: Zip) {
+    archiveFileName = "${project.name}-libs.zip"
+    into('java/lib') {
+        from configurations.runtimeClasspath
+    }
+}
+
+task packageLight(type: Zip) {
+    archiveFileName = "${project.name}.zip"
+    from compileJava
+    from processResources
+}

@@ -17,9 +17,15 @@ class DemoAwsApplicationTests {
 
     @Test
     void testRequest() {
-        Assertions.assertTrue(client.post().uri("/function").body(Mono.just("test"), String.class).exchange()
-                .expectStatus().isOk().expectBody(String.class).returnResult().getResponseBody()
-                .matches("[-+]?\\d+"));
+        Assertions.assertTrue(client.post()
+                .uri("/function")
+                .body(Mono.just("test"), String.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .returnResult()
+                .getResponseBody()
+                .matches("\\d+"));
     }
 
 }

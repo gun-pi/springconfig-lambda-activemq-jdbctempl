@@ -13,8 +13,6 @@ import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
-import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
-import org.springframework.jms.connection.CachingConnectionFactory;
 import org.springframework.jms.core.JmsTemplate;
 
 import javax.sql.DataSource;
@@ -23,12 +21,14 @@ import java.util.function.Function;
 @SpringBootConfiguration
 public class DemoAwsApplication implements ApplicationContextInitializer<GenericApplicationContext> {
 
-    private static final String BROKER_URL = "ssl://b-3eb87df2-ac2e-4db8-b0ba-6ce90f4f2a9e-1.mq.eu-central-1.amazonaws.com:61617";
+    private static final String BROKER_URL =
+            "ssl://b-82646c3d-9ad4-4a2a-be59-a244daa6e033-1.mq.eu-central-1.amazonaws.com:61617";
     private static final String BROKER_USER = "activemq";
     private static final String BROKER_PASSWORD = "exampleexample";
     private static final String BROKER_QUEUE = "queue";
 
-    private static final String DATABASE_URL = "jdbc:postgresql://database-1.cx96u0a6s3vd.eu-central-1.rds.amazonaws.com:5432/postgres";
+    private static final String DATABASE_URL =
+            "jdbc:postgresql://postgresdatabase.cx96u0a6s3vd.eu-central-1.rds.amazonaws.com:5432/postgres";
     private static final String DATABASE_USER = "postgres";
     private static final String DATABASE_PASSWORD = "exampleexample";
     private static final String DATABASE_DRIVER = "org.postgresql.Driver";
@@ -49,7 +49,7 @@ public class DemoAwsApplication implements ApplicationContextInitializer<Generic
                 jmsTemplate.convertAndSend(BROKER_QUEUE, input);
                 message = (String) jmsTemplate.receiveAndConvert(BROKER_QUEUE);
             } catch (Exception e) {
-                LOG.info("Exception occurred during JMS interaction ", e);
+                LOG.error("Exception occurred during JMS interaction ", e);
                 throw new RuntimeException(e);
             }
 
@@ -58,7 +58,7 @@ public class DemoAwsApplication implements ApplicationContextInitializer<Generic
                 final DocumentEntity documentEntity = new DocumentEntity(message);
                 id = LambdaHolder.getDocumentDao().save(documentEntity);
             } catch (Exception e) {
-                LOG.info("Exception occurred during database interaction ", e);
+                LOG.error("Exception occurred during database interaction ", e);
                 throw new RuntimeException(e);
             }
 
@@ -78,20 +78,11 @@ public class DemoAwsApplication implements ApplicationContextInitializer<Generic
                     BROKER_USER,
                     BROKER_PASSWORD,
                     BROKER_URL);
-            activeMQConnectionFactory.setTrustAllPackages(true);
             return activeMQConnectionFactory;
         });
 
-        context.registerBean(CachingConnectionFactory.class,
-                () -> new CachingConnectionFactory(context.getBean(ActiveMQConnectionFactory.class)));
-
-        context.registerBean(JmsTemplate.class, () -> new JmsTemplate(context.getBean(CachingConnectionFactory.class)));
-
-        context.registerBean(DefaultJmsListenerContainerFactory.class, () -> {
-            DefaultJmsListenerContainerFactory factory = new DefaultJmsListenerContainerFactory();
-            factory.setConnectionFactory(context.getBean(ActiveMQConnectionFactory.class));
-            return factory;
-        });
+        context.registerBean(JmsTemplate.class, () ->
+                new JmsTemplate(context.getBean(ActiveMQConnectionFactory.class)));
 
         context.registerBean(DataSource.class, () -> {
             DriverManagerDataSource dataSource = new DriverManagerDataSource();
@@ -112,7 +103,5 @@ public class DemoAwsApplication implements ApplicationContextInitializer<Generic
             lambdaHolder.setJmsTemplate(context.getBean(JmsTemplate.class));
             return lambdaHolder;
         });
-
-
     }
 }
