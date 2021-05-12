@@ -1,0 +1,31 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Lambda application that communicates with MQ and RDS
+Resources:
+  function:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: s3://onboarding-lambda-bucket/demo-aws-configuration.zip
+      Handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
+      Runtime: java11
+      Description: Lambda function that communicates with MQ and RDS
+      MemorySize: 512
+      Timeout: 60
+      Role: arn:aws:iam::306417964208:role/lambda-test-role
+      VpcConfig:
+        SecurityGroupIds:
+          - sg-0cc03cefde9c37e50
+        SubnetIds:
+          - subnet-b6329fca
+          - subnet-c409b988
+          - subnet-e680f68c
+      Layers:
+        - !Ref libs
+  libs:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: lambda-layer
+      Description: Dependencies for the lambda
+      ContentUri: s3://onboarding-lambda-bucket/demo-aws-configuration-libs.zip
+      CompatibleRuntimes:
+        - java11
