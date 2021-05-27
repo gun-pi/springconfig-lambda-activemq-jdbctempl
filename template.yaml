@@ -5,7 +5,7 @@ Resources:
   function:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: s3://onboarding-lambda-bucket/demo-aws-configuration.zip
+      CodeUri: build/distributions/demo-aws-configuration-copy.zip
       Handler: org.springframework.cloud.function.adapter.aws.SpringBootStreamHandler
       Runtime: java11
       Description: Lambda function that communicates with MQ and RDS
@@ -26,6 +26,6 @@ Resources:
     Properties:
       LayerName: lambda-layer
       Description: Dependencies for the lambda
-      ContentUri: s3://onboarding-lambda-bucket/demo-aws-configuration-libs.zip
+      ContentUri: build/distributions/demo-aws-configuration-copy-libs.zip
       CompatibleRuntimes:
         - java11
